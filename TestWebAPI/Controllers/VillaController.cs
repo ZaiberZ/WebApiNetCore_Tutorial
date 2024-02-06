@@ -10,10 +10,17 @@ namespace TestWebAPI.Controllers
     [ApiController]
     public class VillaController : ControllerBase
     {
+        private readonly ILogger<VillaController> _logger;
+        public VillaController(ILogger<VillaController> logger)
+        {
+            _logger = logger;
+        }
+
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<IEnumerable<VillaDto>> GetVillas()
         {
+            _logger.LogInformation("Recuperando Villas");
             //return new List<VillaDto>()
             //{
             //    new VillaDto {Id = 1, Nombre="Otro"},
@@ -30,12 +37,14 @@ namespace TestWebAPI.Controllers
         {
             if (id == 0)
             {
+                _logger.LogError("Error al recibir el parametro");
                 return BadRequest();
             }
 
             var villa = VillaStore.villaList.FirstOrDefault(x => x.Id == id);
             if (villa == null)
             {
+                _logger.LogWarning("Error al recibir el parametro");
                 return NotFound();
             }
 
