@@ -10,9 +10,14 @@ namespace TestWebAPI.Modelos.Dto
         [MaxLength(30)]
         public required string Nombre { get; set; }
 
+        [Required]
+        public double Tarifa { get; set; }
+
         public int Ocupantes { get; set; }
 
         public int MetrosCuadrados { get; set; }
+        public string ImagenURL { get; set; }
+        public string Amenidad { get; set; }
 
     }
 }
