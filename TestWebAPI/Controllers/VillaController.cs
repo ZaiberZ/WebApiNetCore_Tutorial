@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using TestWebAPI.Datos;
+using TestWebAPI.Modelos;
 using TestWebAPI.Modelos.Dto;
 
 namespace TestWebAPI.Controllers
@@ -11,9 +12,11 @@ namespace TestWebAPI.Controllers
     public class VillaController : ControllerBase
     {
         private readonly ILogger<VillaController> _logger;
-        public VillaController(ILogger<VillaController> logger)
+        private readonly ApplicationDbContext _db;
+        public VillaController(ILogger<VillaController> logger, ApplicationDbContext db)
         {
             _logger = logger;
+            _db = db;
         }
 
         [HttpGet]
@@ -26,7 +29,10 @@ namespace TestWebAPI.Controllers
             //    new VillaDto {Id = 1, Nombre="Otro"},
             //    new VillaDto {Id = 2, Nombre="Otro2"}
             //};
-            return Ok(VillaStore.villaList);
+
+            // return Ok(VillaStore.villaList);
+
+            return Ok(_db.Villas.ToList());
         }
 
         [HttpGet("id:int", Name = "GetVilla")]
@@ -41,7 +47,8 @@ namespace TestWebAPI.Controllers
                 return BadRequest();
             }
 
-            var villa = VillaStore.villaList.FirstOrDefault(x => x.Id == id);
+            // var villa = VillaStore.villaList.FirstOrDefault(x => x.Id == id);
+            var villa = _db.Villas.FirstOrDefault(x => x.Id == id);
             if (villa == null)
             {
                 _logger.LogWarning("Error al recibir el parametro");
@@ -59,7 +66,7 @@ namespace TestWebAPI.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (VillaStore.villaList.FirstOrDefault(v => v.Nombre.ToLower() == villa.Nombre.ToLower()) != null)
+            if (_db.Villas.FirstOrDefault(v => v.Nombre.ToLower() == villa.Nombre.ToLower()) != null)
             {
                 ModelState.AddModelError("NameExist", "Ya existe la villa");
                 return BadRequest(ModelState);
@@ -69,8 +76,19 @@ namespace TestWebAPI.Controllers
 
             if (villa.Id > 0) return StatusCode(StatusCodes.Status500InternalServerError);
 
-            villa.Id = VillaStore.villaList.OrderByDescending(v => v.Id).FirstOrDefault().Id + 1;
-            VillaStore.villaList.Add(villa);
+            Villa newModel = new Villa()
+            {
+                Nombre = villa.Nombre,
+                Detalle = villa.Nombre,
+                ImagenURL = villa.ImagenURL,
+                Ocupantes = villa.Ocupantes,
+                Tarifa = villa.Tarifa,
+                MetrosCuadrados = villa.MetrosCuadrados,
+                Amenidad = villa.Amenidad,
+            };
+
+            _db.Villas.Add(newModel);
+            _db.SaveChanges();
 
             // return Ok(villa);
             return CreatedAtRoute("GetVilla", new { id = villa.Id }, villa);
@@ -84,13 +102,14 @@ namespace TestWebAPI.Controllers
         {
             if (id == 0) return BadRequest();
 
-            var villa = VillaStore.villaList.FirstOrDefault(x => x.Id == id);
+            var villa = _db.Villas.FirstOrDefault(x => x.Id == id);
             if (villa == null)
             {
                 return NotFound();
             }
 
-            VillaStore.villaList.Remove(villa);
+            _db.Villas.Remove(villa);
+            _db.SaveChanges();
             return NoContent();
         }
 
@@ -101,11 +120,26 @@ namespace TestWebAPI.Controllers
         {
             if (villaNew == null || villaNew.Id != id) return BadRequest(villaNew);
 
-            var villaOld = VillaStore.villaList.FirstOrDefault(x => x.Id == id);
+            var villaOld = _db.Villas.FirstOrDefault(x => x.Id == id);
             if (villaOld == null) return NotFound();
 
-            villaOld.Ocupantes = villaNew.Ocupantes;
-            villaOld.MetrosCuadrados = villaNew.MetrosCuadrados;
+            Villa newModel = new Villa()
+            {
+                Id = id,
+                Nombre = villaNew.Nombre,
+                Detalle = villaNew.Nombre,
+                ImagenURL = villaNew.ImagenURL,
+                Ocupantes = villaNew.Ocupantes,
+                Tarifa = villaNew.Tarifa,
+                MetrosCuadrados = villaNew.MetrosCuadrados,
+                Amenidad = villaNew.Amenidad,
+            };
+
+            _db.Villas.Update(newModel);
+            _db.SaveChanges();
+
+            //villaOld.Ocupantes = villaNew.Ocupantes;
+            //villaOld.MetrosCuadrados = villaNew.MetrosCuadrados;
 
             // VillaStore.villaList.inde
 
@@ -119,13 +153,42 @@ namespace TestWebAPI.Controllers
         {
             if (villaNew == null || id == 0) return BadRequest(villaNew);
 
-            var villaOld = VillaStore.villaList.FirstOrDefault(x => x.Id == id);
-            if (villaOld == null) return NotFound();
+            // var villaOld = VillaStore.villaList.FirstOrDefault(x => x.Id == id);
+            // if (villaOld == null) return NotFound();
 
-            villaNew.ApplyTo(villaOld, ModelState);
+            // villaNew.ApplyTo(villaOld, ModelState);
+            var villaOld = _db.Villas.FirstOrDefault(x => x.Id == id);
+
+            VillaDto villaDto = new VillaDto() {
+                Id = id,
+                Nombre = villaOld.Nombre,
+                ImagenURL = villaOld.ImagenURL,
+                Ocupantes = villaOld.Ocupantes,
+                Tarifa = villaOld.Tarifa,
+                MetrosCuadrados = villaOld.MetrosCuadrados,
+                Amenidad = villaOld.Amenidad,
+            };
+
+            if(villaOld == null || id == 0) { return BadRequest(villaNew); }
+
+            villaNew.ApplyTo(villaDto, ModelState);
 
             if (!ModelState.IsValid) return BadRequest();
+            
+            Villa newModel = new Villa()
+            {
+                Id = id,
+                Nombre = villaOld.Nombre,
+                Detalle = villaOld.Nombre,
+                ImagenURL = villaOld.ImagenURL,
+                Ocupantes = villaOld.Ocupantes,
+                Tarifa = villaOld.Tarifa,
+                MetrosCuadrados = villaOld.MetrosCuadrados,
+                Amenidad = villaOld.Amenidad,
+            };
 
+            _db.Villas.Update(newModel);
+            _db.SaveChanges();
 
             return NoContent();
         }
