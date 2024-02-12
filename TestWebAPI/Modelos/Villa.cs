@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
 
 namespace TestWebAPI.Modelos
 {
@@ -17,6 +18,7 @@ namespace TestWebAPI.Modelos
         public string ImagenURL { get; set; }
         public string Amenidad { get; set; }
         public DateTime CreateDate { get; set; }
+        [AllowNull]
         public DateTime UpdateDate { get; set; }
 
     }
